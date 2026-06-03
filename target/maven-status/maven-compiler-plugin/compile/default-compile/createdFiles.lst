@@ -1,7 +1,12 @@
+com\mycompany\mavenproject3\model\Producto.class
 com\mycompany\mavenproject3\model\Estudiante.class
 com\mycompany\mavenproject3\api\ProductoBDApiServlet.class
+com\mycompany\mavenproject3\api\ProductoServlet.class
 com\mycompany\mavenproject3\db\DatabaseConfig.class
 com\mycompany\mavenproject3\dao\ProductoDAO.class
 com\mycompany\mavenproject3\api\EstudianteApiServlet.class
+com\mycompany\mavenproject3\model\Productos.class
+com\mycompany\mavenproject3\api\ProductoApiServlet.class
 com\mycompany\mavenproject3\dao\EstudianteDAO.class
 com\mycompany\mavenproject3\api\EstudianteBDApiServlet.class
+com\mycompany\mavenproject3\model\EstudianteServlet.class

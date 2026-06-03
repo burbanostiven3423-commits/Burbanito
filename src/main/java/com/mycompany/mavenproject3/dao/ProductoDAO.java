@@ -43,7 +43,7 @@ public class ProductoDAO {
 
     public int insertar(Producto producto) throws SQLException {
 
-        String sql = "INSERT INTO productos(nombre, precio, stock) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO productos(nombre, precio, cantidad) VALUES (?, ?, ?)";
 
         try (
                 Connection con = DatabaseConfig.getConexion();
@@ -69,7 +69,7 @@ public class ProductoDAO {
 
     public boolean actualizar(int id, Producto producto) throws SQLException {
 
-        String sql = "UPDATE productos SET nombre=?, precio=?, stock=? WHERE id=?";
+        String sql = "UPDATE productos SET nombre=?, precio=?, cantidad=? WHERE id=?";
 
         try (
                 Connection con = DatabaseConfig.getConexion();
