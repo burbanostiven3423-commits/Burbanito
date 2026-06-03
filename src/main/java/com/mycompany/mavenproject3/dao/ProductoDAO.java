@@ -31,7 +31,7 @@ public class ProductoDAO {
                         rs.getInt("id"),
                         rs.getString("nombre"),
                         rs.getDouble("precio"),
-                        rs.getInt("stock")
+                        rs.getInt("cantidad")
                 );
 
                 lista.add(p);
