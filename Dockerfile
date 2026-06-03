@@ -1,32 +1,41 @@
-# === Etapa 1: Compilación ===
-FROM maven:3.8.8-eclipse-temurin-11 AS builder
-
+# =========================================================================
+# Etapa 1: Compilación y empaquetado del proyecto con Maven y Java 11
+# =========================================================================
+FROM maven:3.8.6-openjdk-11 AS build
 WORKDIR /app
 
-# Copiamos el pom.xml y descargamos dependencias (buena práctica para aprovechar la caché de Docker)
+# Copiar el archivo de configuración de dependencias
 COPY pom.xml .
-RUN mven dependency:go-offline -B
 
-# Copiamos el código fuente y compilamos el archivo .war
+# Descargar dependencias para aprovechar la caché de capas de Docker
+RUN mvn dependency:go-offline -B
+
+# Copiar el código fuente del proyecto
 COPY src ./src
+
+# Compilar y generar el archivo WAR (omitiendo pruebas para acelerar el despliegue)
 RUN mvn clean package -DskipTests
 
-# === Etapa 2: Servidor de producción ===
+# =========================================================================
+# Etapa 2: Servidor de ejecución usando Apache Tomcat 9 con Java 11
+# =========================================================================
 FROM tomcat:9.0-jdk11-corretto
+WORKDIR /usr/local/tomcat
 
-# Railway asigna dinámicamente un puerto mediante la variable de entorno $PORT.
-# Modificamos el puerto por defecto de Tomcat (8080) para que escuche el que Railway decida.
-RUN sed -i 's/port="8080"/port="${port.http}"/g' /usr/local/tomcat/conf/server.xml
-ENV port.http=${PORT:-8080}
+# Railway asigna un puerto dinámico mediante la variable de entorno $PORT.
+# Modificamos el server.xml de Tomcat para que escuche en el puerto que Railway decida en lugar del 8080.
+RUN sed -i 's/port="8080"/port="${port.http}"/g' conf/server.xml
 
-# Eliminamos las aplicaciones por defecto de Tomcat para limpiar el entorno
-RUN rm -rf /usr/local/tomcat/webapps/*
+# Eliminar las aplicaciones por defecto de Tomcat para limpiar el entorno
+RUN rm -rf webapps/*
 
-# Copiamos el archivo .war generado en la etapa anterior. 
-# Lo renombramos a ROOT.war para que sea la aplicación principal y responda en la raíz (/)
-COPY --from=builder /app/target/demo-web-1.0-SNAPSHOT.war /usr/local/tomcat/webapps/ROOT.war
+# Copiar el archivo WAR generado en la etapa de compilación.
+# ACTUALIZADO: Buscando el nombre generado por tu pom.xml (demo-web-1.0-SNAPSHOT.war)
+COPY --from=build /app/target/demo-web-1.0-SNAPSHOT.war webapps/ROOT.war
 
+# Exponer el puerto al entorno (Railway mapeará esto internamente)
 EXPOSE 8080
 
-# Iniciamos Tomcat
+# Definir la propiedad del puerto dinámico para Tomcat y arrancar el servidor
+ENV JAVA_OPTS="-Dport.http=${PORT:-8080}"
 CMD ["catalina.sh", "run"]
