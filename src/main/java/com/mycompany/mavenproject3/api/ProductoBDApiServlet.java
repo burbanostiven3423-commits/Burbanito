@@ -6,8 +6,7 @@ import com.mycompany.mavenproject3.model.Producto;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
-import java.util
-        .List;
+import java.util.List;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -15,24 +14,42 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-/**
- * API REST de productos usando MySQL
- */
 @WebServlet(name = "ProductoBDApiServlet", urlPatterns = {"/api/productos-bd"})
 public class ProductoBDApiServlet extends HttpServlet {
 
-    // Conexion con el DAO
     private final ProductoDAO dao = new ProductoDAO();
 
-    /**
-     * LISTAR PRODUCTOS
-     */
+    private void configurarHeaders(HttpServletRequest request,
+            HttpServletResponse response)
+            throws java.io.UnsupportedEncodingException {
+
+        request.setCharacterEncoding("UTF-8");
+
+        response.setContentType("application/json;charset=UTF-8");
+        response.setCharacterEncoding("UTF-8");
+
+        response.setHeader("Access-Control-Allow-Origin", "*");
+        response.setHeader("Access-Control-Allow-Methods",
+                "GET, POST, PUT, DELETE, OPTIONS");
+        response.setHeader("Access-Control-Allow-Headers",
+                "Content-Type");
+    }
+
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+    protected void doOptions(HttpServletRequest request,
+            HttpServletResponse response)
             throws ServletException, IOException {
 
-        response.setCharacterEncoding("UTF-8");
-        response.setContentType("application/json;charset=UTF-8");
+        configurarHeaders(request, response);
+        response.setStatus(HttpServletResponse.SC_OK);
+    }
+
+    @Override
+    protected void doGet(HttpServletRequest request,
+            HttpServletResponse response)
+            throws ServletException, IOException {
+
+        configurarHeaders(request, response);
 
         try {
 
@@ -65,215 +82,106 @@ public class ProductoBDApiServlet extends HttpServlet {
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 
             try (PrintWriter out = response.getWriter()) {
-
-                out.print("{\"error\":\"Error al consultar productos: "
-                        + escaparJson(e.getMessage()) + "\"}");
+                out.print("{\"error\":\"" + escaparJson(e.getMessage()) + "\"}");
             }
         }
     }
 
-    /**
-     * GUARDAR PRODUCTO
-     */
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+    protected void doPost(HttpServletRequest request,
+            HttpServletResponse response)
             throws ServletException, IOException {
 
-        response.setCharacterEncoding("UTF-8");
-        response.setContentType("application/json;charset=UTF-8");
+        configurarHeaders(request, response);
 
         String nombre = request.getParameter("nombre");
         String precioStr = request.getParameter("precio");
         String stockStr = request.getParameter("stock");
-
-        // Validar nombre
-        if (nombre == null || nombre.trim().isEmpty()) {
-
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-
-            try (PrintWriter out = response.getWriter()) {
-                out.print("{\"error\":\"El nombre es obligatorio\"}");
-            }
-
-            return;
-        }
 
         try {
 
             double precio = Double.parseDouble(precioStr);
             int stock = Integer.parseInt(stockStr);
 
-            Producto nuevo = new Producto(nombre.trim(), precio, stock);
+            Producto nuevo = new Producto(nombre, precio, stock);
 
             int idGenerado = dao.insertar(nuevo);
 
             nuevo.setId(idGenerado);
 
             try (PrintWriter out = response.getWriter()) {
-
-                out.print("{");
-                out.print("\"mensaje\":\"Producto guardado correctamente\",");
-                out.print("\"producto\":" + nuevo);
-                out.print("}");
+                out.print("{\"mensaje\":\"Producto guardado\",\"producto\":" + nuevo + "}");
             }
 
-        } catch (NumberFormatException ex) {
-
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-
-            try (PrintWriter out = response.getWriter()) {
-                out.print("{\"error\":\"Precio y stock deben ser numericos\"}");
-            }
-
-        } catch (SQLException ex) {
+        } catch (Exception e) {
 
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 
             try (PrintWriter out = response.getWriter()) {
-
-                out.print("{\"error\":\"Error al guardar producto: "
-                        + escaparJson(ex.getMessage()) + "\"}");
+                out.print("{\"error\":\"" + escaparJson(e.getMessage()) + "\"}");
             }
         }
     }
 
-    /**
-     * ACTUALIZAR PRODUCTO
-     */
     @Override
-    protected void doPut(HttpServletRequest request, HttpServletResponse response)
+    protected void doPut(HttpServletRequest request,
+            HttpServletResponse response)
             throws ServletException, IOException {
 
-        response.setCharacterEncoding("UTF-8");
-        response.setContentType("application/json;charset=UTF-8");
-
-        String idStr = request.getParameter("id");
-        String nombre = request.getParameter("nombre");
-        String precioStr = request.getParameter("precio");
-        String stockStr = request.getParameter("stock");
+        configurarHeaders(request, response);
 
         try {
 
-            int id = Integer.parseInt(idStr);
-            double precio = Double.parseDouble(precioStr);
-            int stock = Integer.parseInt(stockStr);
+            int id = Integer.parseInt(request.getParameter("id"));
+            String nombre = request.getParameter("nombre");
+            double precio = Double.parseDouble(request.getParameter("precio"));
+            int stock = Integer.parseInt(request.getParameter("stock"));
 
-            if (nombre == null || nombre.trim().isEmpty()) {
+            Producto producto = new Producto(id, nombre, precio, stock);
 
-                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-
-                try (PrintWriter out = response.getWriter()) {
-                    out.print("{\"error\":\"El nombre es obligatorio\"}");
-                }
-
-                return;
-            }
-
-            Producto actualizado = new Producto(id, nombre.trim(), precio, stock);
-
-            boolean exito = dao.actualizar(id, actualizado);
-
-            if (!exito) {
-
-                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-
-                try (PrintWriter out = response.getWriter()) {
-                    out.print("{\"error\":\"No existe un producto con ese id\"}");
-                }
-
-                return;
-            }
+            dao.actualizar(id, producto);
 
             try (PrintWriter out = response.getWriter()) {
-
-                out.print("{");
-                out.print("\"mensaje\":\"Producto actualizado correctamente\",");
-                out.print("\"producto\":" + actualizado);
-                out.print("}");
+                out.print("{\"mensaje\":\"Producto actualizado\"}");
             }
 
-        } catch (NumberFormatException ex) {
-
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-
-            try (PrintWriter out = response.getWriter()) {
-
-                out.print("{\"error\":\"Id, precio y stock deben ser numericos\"}");
-            }
-
-        } catch (SQLException ex) {
+        } catch (Exception e) {
 
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 
             try (PrintWriter out = response.getWriter()) {
-
-                out.print("{\"error\":\"Error al actualizar producto: "
-                        + escaparJson(ex.getMessage()) + "\"}");
+                out.print("{\"error\":\"" + escaparJson(e.getMessage()) + "\"}");
             }
         }
     }
 
-    /**
-     * ELIMINAR PRODUCTO
-     */
     @Override
-    protected void doDelete(HttpServletRequest request, HttpServletResponse response)
+    protected void doDelete(HttpServletRequest request,
+            HttpServletResponse response)
             throws ServletException, IOException {
 
-        response.setCharacterEncoding("UTF-8");
-        response.setContentType("application/json;charset=UTF-8");
-
-        String idStr = request.getParameter("id");
+        configurarHeaders(request, response);
 
         try {
 
-            int id = Integer.parseInt(idStr);
+            int id = Integer.parseInt(request.getParameter("id"));
 
-            boolean exito = dao.eliminar(id);
-
-            if (!exito) {
-
-                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-
-                try (PrintWriter out = response.getWriter()) {
-                    out.print("{\"error\":\"No existe un producto con ese id\"}");
-                }
-
-                return;
-            }
+            dao.eliminar(id);
 
             try (PrintWriter out = response.getWriter()) {
-
-                out.print("{");
-                out.print("\"mensaje\":\"Producto eliminado correctamente\",");
-                out.print("\"id\":" + id);
-                out.print("}");
+                out.print("{\"mensaje\":\"Producto eliminado\"}");
             }
 
-        } catch (NumberFormatException ex) {
-
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-
-            try (PrintWriter out = response.getWriter()) {
-
-                out.print("{\"error\":\"El id debe ser numerico\"}");
-            }
-
-        } catch (SQLException ex) {
+        } catch (Exception e) {
 
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 
             try (PrintWriter out = response.getWriter()) {
-
-                out.print("{\"error\":\"Error al eliminar producto: "
-                        + escaparJson(ex.getMessage()) + "\"}");
+                out.print("{\"error\":\"" + escaparJson(e.getMessage()) + "\"}");
             }
         }
     }
 
-    /**
-     * Escapar caracteres especiales JSON
-     */
     private String escaparJson(String texto) {
 
         if (texto == null) {

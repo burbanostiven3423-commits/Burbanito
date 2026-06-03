@@ -13,15 +13,15 @@ import java.sql.Statement;
 public class DatabaseConfig {
 
     // Datos de conexion
-    private static final String HOST     = "sql.freedb.tech";
-    private static final String PUERTO   = "3306";
-    private static final String NOMBRE   = "freedb_aoAc76qo";
-    private static final String USUARIO  = "u_K9qAxD";
-    private static final String CLAVE    = "9zb3UiU0H7mJ";
+private static final String HOST     = "acela.proxy.rlwy.net";
+private static final String PUERTO   = "27253";
+private static final String NOMBRE   = "railway";
+private static final String USUARIO  = "root";
+private static final String CLAVE    = "MVdhqQZkzcrImChdNejrPUVvYYQJOPsO";
 
-    private static final String URL =
-        "jdbc:mysql://" + HOST + ":" + PUERTO + "/" + NOMBRE
-        + "?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
+private static final String URL =
+    "jdbc:mysql://" + HOST + ":" + PUERTO + "/" + NOMBRE +
+    "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
 
     static {
         try {
